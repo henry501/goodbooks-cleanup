@@ -39,6 +39,13 @@ def find_similar_tags(tag_search):
     c.execute(similar_tags_query, (tag_search,))
     return c.fetchall()
 
+def set_parent_tag(tag_id, parent_id):
+    print(f"Running set parent for parent {parent_id} child {tag_id}")
+    set_parent_query = "update tags set parent_tag_id = :parent_id where tag_id = :tag_id"
+
+    c.execute(set_parent_query, {"parent_id": parent_id, "tag_id": tag_id})
+    conn.commit()
+
 def main():
 
     # It would be nice to iterate over groups of 10,
@@ -55,11 +62,9 @@ def main():
             # ('divergent-series', '9604', 10),
             # (tag_name, tag_id, count)
 
-            print("\n")
-            print()
             print(f"Tag name {row[0]} has {row[2]} books.")
-            userin = input("Will you [d]elete, [k]eep, [c]ombine, [s]kip?")
-            while userin not in ("", "d", "c", "k", "s"):
+            userin = input("Will you [d]elete, [k]eep, [c]ombine, set [p]arent, [s]kip?")
+            while userin not in ("", "d", "c", "k", "s", "p"):
                 userin = input("Will you [d]elete, [k]eep [enter], or [c]ombine tags?")
             if userin == '':
                 continue
@@ -69,6 +74,23 @@ def main():
             elif userin == "s":
                 print("\n")
                 break
+            elif userin == "p":
+                tag_search = input("What to search for?")
+                if len(tag_search) < 3:
+                    tag_search = input("What to search for?")
+                else:
+                    st = find_similar_tags(tag_search)
+                    if len(st) < 1:
+                        print(f"Sorry, no tag found with search {tag_search}")
+                    else:
+                        for i in range(0, len(st)):
+                            print(f"{i}: Tag name {st[i][0]} has {st[i][2]} books.")
+                        to_combine = int(input(f"Input the number of tag to make parent of {row[0]}."))
+                        if to_combine not in range(0, len(st)):
+                            int(input(f"Input the number of tag to make parent of {row[0]}."))
+                        else:
+                            print(f"Will make {row[0]} child of {st[to_combine][0]}")
+                            set_parent_tag(row[1], st[to_combine][1])
             elif userin == "c":
                 tag_search = input("What to search for?")
                 if len(tag_search) < 3:
